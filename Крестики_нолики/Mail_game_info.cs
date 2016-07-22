@@ -27,6 +27,8 @@ namespace Крестики_нолики
             { 
                 int i = 0; Exception exx = null;
             restart:
+                try
+                {
                 SmtpClient smtp = new SmtpClient("smtp.yandex.ru", 25);
                 smtp.EnableSsl = true;
                 smtp.Credentials = new NetworkCredential("gamealeksey2093", "+++gamealeksey2093+++");
@@ -35,8 +37,6 @@ namespace Крестики_нолики
                 mail_message.To.Add(new MailAddress("gamealeksey2093@ya.ru"));
                 mail_message.Subject = "Ошибка в игре " + DateTime.Now.ToString();
                 mail_message.Body = err.ToString() + "\n \n" + DateTime.Now.ToString() + "\n \n" + exx.ToString();
-                try
-                {
                     smtp.Send(mail_message);
                 }
                 catch (Exception ex)

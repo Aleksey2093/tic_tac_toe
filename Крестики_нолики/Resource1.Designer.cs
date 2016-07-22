@@ -63,6 +63,16 @@ namespace Крестики_нолики {
         /// <summary>
         ///   Поиск локализованного ресурса типа System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap kr_v1 {
+            get {
+                object obj = ResourceManager.GetObject("kr_v1", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Поиск локализованного ресурса типа System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap load_picture_image {
             get {
                 object obj = ResourceManager.GetObject("load_picture_image", resourceCulture);
@@ -76,6 +86,16 @@ namespace Крестики_нолики {
         internal static System.Drawing.Bitmap nulik {
             get {
                 object obj = ResourceManager.GetObject("nulik", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Поиск локализованного ресурса типа System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap null_v1 {
+            get {
+                object obj = ResourceManager.GetObject("null_v1", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }

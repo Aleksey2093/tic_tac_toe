@@ -8,248 +8,300 @@ namespace Крестики_нолики
 {
     class Computer
     {
+        /*0 1 2
+         *3 4 5
+         *6 7 8
+         */
         public int hod_comp_main(int[] mass, int vrah)
         {
-            bool ye = true;
-            for (int i = 0; i < 9; i++)
-            { //если все поле пустое, то без раздумий ходим в центр
-                if (mass[i] != 3) { ye = false; }
-            }
-            if (ye) { return 4; }//ход в центр
-            else 
-            {
-            int res_center_null = -1, res_center_vrah = -1, res_center_mi = -1;
-            if (mass[4] == 3) { res_center_null = center_null(mass, vrah); return res_center_null; }
-            else if (mass[4] == vrah) { res_center_vrah = center_vrah(mass, vrah); return res_center_vrah; }
-            else { res_center_mi = center_mi(mass, vrah); return res_center_mi; }
-            }
-            return -1; //ошибка
+            //массив отвечает за поле. 3 - пустая ячейка, 1 - стоит крестик, 0 - стоит нолик
+            if (mass.AsParallel().All(x => x == 3))
+                return 4;
+            int me = (vrah == 1) ? 0 : 1;
+            int[][] matrix = getMatrix(mass);
+            int res = provPobeda((int[][])matrix.Clone(),me,vrah);
+            if (res != -1)
+                return res;
+            matrix = getMatrix(mass);
+            res = provVrag((int[][])matrix.Clone(), me,vrah);
+            if (res != -1)
+                return res;
+            matrix = getMatrix(mass);
+            res = randromLogikHod((int[][])matrix.Clone(),(int[])mass.Clone(),me,vrah);
+            return res;
         }
 
-        private int center_null(int[] mass, int vrah)
+        /// <summary>
+        /// Проверка победы по всем признакам
+        /// </summary>
+        /// <param name="matrix">Поле</param>
+        /// <param name="me">Я</param>
+        /// <param name="vrah">Соперник</param>
+        /// <returns></returns>
+        private int provPobeda(int[][] matrix, int me, int vrah)
         {
-            int c02 = 0, c06 = 0, c68 = 0, c28 = 0; //счетчики для противника
-            int c02mi = 0, c06mi = 0, c68mi = 0, c28mi = 0; //счетчики для меня
-            if (mass[0] == vrah) { c02++; c06++; } else if (mass[0] != 3) { c02mi++; c06mi++; }
-            if (mass[1] == vrah) { c02++; } else if (mass[1] != 3) { c02mi++; }
-            if (mass[2] == vrah) { c02++; c28++; } else if (mass[2] != 3) { c02mi++; c28mi++; }
-            if (mass[3] == vrah) { c06++; } else if (mass[3] != 3) { c06mi++; }
-            if (mass[5] == vrah) { c28++; } else if (mass[5] != 3) { c28mi++; }
-            if (mass[6] == vrah) { c06++; c68++; } else if (mass[6] != 3) { c06mi++; c68mi++; }
-            if (mass[7] == vrah) { c68++; } else if (mass[7] != 3) { c68mi++; }
-            if (mass[8] == vrah) { c68++; c28++; } else if (mass[8] != 3) { c68mi++; c28mi++; }
-            
-            /*0 1 2
-              3 4 5
-              6 7 8*/
-
-            if (c02 == 2 && c02mi == 0) //проверка критичных ситуаций
-            {
-                if (mass[1] == 3) return 1; //немедленно ходим туда
-                if (mass[0] == 3) return 0;
-                if (mass[2] == 3) return 2;
-            }
-            else if (c68 == 2 && c68mi == 0)
-            {
-                if (mass[6] == 3) return 6;
-                if (mass[7] == 3) return 7;
-                if (mass[8] == 3) return 8;
-            }
-            else if (c06 == 2 && c06mi == 0)
-            {
-                if (mass[0] == 3) return 0;
-                if (mass[3] == 3) return 3;
-                if (mass[6] == 3) return 6;
-            }
-            else if (c28 == 2 && c28mi == 0)
-            {
-                if (mass[2] == 3) return 0;
-                if (mass[5] == 3) return 5;
-                if (mass[8] == 3) return 8;
-            }
-
-            int uhol = 0;
-            for (int i=0;i<9; i++)
-            {
-                if (mass[i] != 3) uhol++;
-                if (uhol > 1) break;
-            }
-            if (uhol == 1)
-            {
-                if (mass[0] == vrah) return 8;
-                if (mass[1] == vrah) return 7;
-                if (mass[2] == vrah) return 6;
-                if (mass[3] == vrah) return 5;
-                if (mass[5] == vrah) return 3;
-                if (mass[6] == vrah) return 2;
-                if (mass[7] == vrah) return 1;
-                if (mass[8] == vrah) return 0;
-            }
-
-            return 4; //если вокруг все удачно то идем в центр
+            int res = provPobedaCub((int[][])matrix.Clone(), me, vrah);
+            return (res != -1) ? res : provPobedaDiagolnal(matrix, me, vrah);
         }
-        private int center_vrah(int[] mass, int vrah)
+
+        /// <summary>
+        /// Проверка победы по диагонали
+        /// </summary>
+        /// <param name="matrix">Поле</param>
+        /// <param name="me">Я</param>
+        /// <param name="vrah">Соперник</param>
+        /// <returns></returns>
+        private int provPobedaDiagolnal(int[][] matrix, int me, int vrah)
         {
-            bool rand = true;
-            for (int i = 0; i < 9; i ++)
-                if (i != 4 && mass[i] != 3) { rand = false; break; }
-            if (rand) /* если все пусто то в угол */ return 0; /* левый верхний сойдет */
-
-            int mi; if (vrah == 1) mi = 0; else mi = 1;
-            /*if (mass[0] == mi && mass[8] == 3) { return 8; }
-            if (mass[1] == mi && mass[7] == 3) { return 7; }
-            if (mass[2] == mi && mass[6] == 3) { return 6; }
-            if (mass[3] == mi && mass[5] == 3) { return 5; }
-            if (mass[5] == mi && mass[3] == 3) { return 3; }
-            if (mass[6] == mi && mass[2] == 3) { return 2; }
-            if (mass[7] == mi && mass[1] == 3) { return 1; }
-            if (mass[8] == mi && mass[0] == 3) { return 0; }*/
-
-            int c02 = 0, c06 = 0, c68 = 0, c28 = 0; //счетчики для противника
-            int c02mi = 0, c06mi = 0, c68mi = 0, c28mi = 0; //счетчики для меня
-            if (mass[0] == vrah) { c02++; c06++; } else if (mass[0] != 3) { c02mi++; c06mi++; }
-            if (mass[1] == vrah) { c02++; } else if (mass[1] != 3) { c02mi++; }
-            if (mass[2] == vrah) { c02++; c28++; } else if (mass[2] != 3) { c02mi++; c28mi++; }
-            if (mass[3] == vrah) { c06++; } else if (mass[3] != 3) { c06mi++; }
-            if (mass[5] == vrah) { c28++; } else if (mass[5] != 3) { c28mi++; }
-            if (mass[6] == vrah) { c06++; c68++; } else if (mass[6] != 3) { c06mi++; c68mi++; }
-            if (mass[7] == vrah) { c68++; } else if (mass[7] != 3) { c68mi++; }
-            if (mass[8] == vrah) { c68++; c28++; } else if (mass[8] != 3) { c68mi++; c28mi++; }
-            if (c02 == 0 && c02mi == 2) //проверка победных ситуаций
+            int res = 0;
+            for (int i = 0; i < 3; i++)
             {
-                if (mass[1] == 3) return 1; //немедленно ходим туда
-                if (mass[0] == 3) return 0;
-                if (mass[2] == 3) return 2;
+                if (matrix[i][i] == vrah) { res = 0; break; }
+                else if (matrix[i][i] == me) { res += 1; }
+                else if (matrix[i][i] != 3) { return (i * 3 + i) * (-1); }
             }
-            if (c68 == 0 && c68mi == 2)
+            if (res == 2)
             {
-                if (mass[6] == 3) return 6;
-                if (mass[7] == 3) return 7;
-                if (mass[8] == 3) return 8;
+                if (matrix[0][0] == 3) return 0;
+                if (matrix[1][1] == 3) return 4;
+                if (matrix[2][2] == 3) return 8;
             }
-            if (c06 == 0 && c06mi == 2)
+            res = 0;
+            for (int i=0;i<3;i++)
             {
-                if (mass[0] == 3) return 0;
-                if (mass[3] == 3) return 3;
-                if (mass[6] == 3) return 6;
+                int j = 2 - i;
+                if (matrix[i][j] == vrah) { res = 0; break; }
+                else if (matrix[i][j] == me) { res += 1; }
+                else if (matrix[i][j] != 3) { return (i * 3 + j) * (-1); }
             }
-            if (c28 == 0 && c28mi == 2)
+            if (res == 2)
             {
-                if (mass[2] == 3) return 0;
-                if (mass[5] == 3) return 5;
-                if (mass[8] == 3) return 8;
+                //0 1 2
+                //3 4 5
+                //6 7 8
+                if (matrix[0][2] == 3) return 2;
+                if (matrix[1][1] == 3) return 4;
+                if (matrix[2][0] == 3) return 6;
             }
-
-            if (mass[0] == vrah && mass[8] == 3) { return 8; }
-            if (mass[1] == vrah && mass[7] == 3) { return 7; }
-            if (mass[2] == vrah && mass[6] == 3) { return 6; }
-            if (mass[3] == vrah && mass[5] == 3) { return 5; }
-            if (mass[5] == vrah && mass[3] == 3) { return 3; }
-            if (mass[6] == vrah && mass[2] == 3) { return 2; }
-            if (mass[7] == vrah && mass[1] == 3) { return 1; }
-            if (mass[8] == vrah && mass[0] == 3) { return 0; }
-
-            if (c02 == 2 && c02mi == 0) //проверка критичных ситуаций
-            {
-                if (mass[1] == 3) return 1; //немедленно ходим туда
-                if (mass[0] == 3) return 0;
-                if (mass[2] == 3) return 2;
-            }
-            if (c68 == 2 && c68mi == 0)
-            {
-                if (mass[6] == 3) return 6;
-                if (mass[7] == 3) return 7;
-                if (mass[8] == 3) return 8;
-            }
-            if (c06 == 2 && c06mi == 0)
-            {
-                if (mass[0] == 3) return 0;
-                if (mass[3] == 3) return 3;
-                if (mass[6] == 3) return 6;
-            }
-            if (c28 == 2 && c28mi == 0)
-            {
-                if (mass[2] == 3) return 0;
-                if (mass[5] == 3) return 5;
-                if (mass[8] == 3) return 8;
-            }
-            //если мы приперлись сюда и не сделали хода, то это подозрительно, поэтому ходим в один из углов
-            for (int i = 0; i < 9; i++)
-                if (mass[i] == 3) return i;
-
             return -1;
         }
-        private int center_mi(int[] mass, int vrah)
+
+        enum Cell { X = 1, O = 0, NULL = 3 };
+
+        /// <summary>
+        /// Рандомный логический ход
+        /// </summary>
+        /// <param name="matrix">Матрица поля</param>
+        /// <param name="mass">Массив поля</param>
+        /// <param name="me">Я</param>
+        /// <param name="vrah">Соперник</param>
+        /// <returns></returns>
+        private int randromLogikHod(int[][] matrix, int[] mass, int me, int vrah)
         {
-            bool rand = true;
-            for (int i = 0; i < 9; i++)
-                if (i != 4 && mass[i] != 3) { rand = false; break; }
-            if (rand) { return 0; }
-            int mi; if (vrah == 1) mi = 0; else mi = 1;
-            if (mass[0] == mi && mass[8] == 3) { return 8; }
-            if (mass[1] == mi && mass[7] == 3) { return 7; }
-            if (mass[2] == mi && mass[6] == 3) { return 6; }
-            if (mass[3] == mi && mass[5] == 3) { return 5; }
-            if (mass[5] == mi && mass[3] == 3) { return 3; }
-            if (mass[6] == mi && mass[2] == 3) { return 2; }
-            if (mass[7] == mi && mass[1] == 3) { return 1; }
-            if (mass[8] == mi && mass[0] == 3) { return 0; }
-
-            /*if (mass[0] == vrah && mass[8] == 3) { return 8; }
-            if (mass[1] == vrah && mass[7] == 3) { return 7; }
-            if (mass[2] == vrah && mass[6] == 3) { return 6; }
-            if (mass[3] == vrah && mass[5] == 3) { return 5; }
-            if (mass[5] == vrah && mass[3] == 3) { return 3; }
-            if (mass[6] == vrah && mass[2] == 3) { return 2; }
-            if (mass[7] == vrah && mass[1] == 3) { return 1; }
-            if (mass[8] == vrah && mass[0] == 3) { return 0; }*/
-
-            int c02 = 0, c06 = 0, c68 = 0, c28 = 0; //счетчики для противника
-            int c02mi = 0, c06mi = 0, c68mi = 0, c28mi = 0; //счетчики для меня
-            if (mass[0] == vrah) { c02++; c06++; } else if (mass[0] != 3) { c02mi++; c06mi++; }
-            if (mass[1] == vrah) { c02++; } else if (mass[1] != 3) { c02mi++; }
-            if (mass[2] == vrah) { c02++; c28++; } else if (mass[2] != 3) { c02mi++; c28mi++; }
-            if (mass[3] == vrah) { c06++; } else if (mass[3] != 3) { c06mi++; }
-            if (mass[5] == vrah) { c28++; } else if (mass[5] != 3) { c28mi++; }
-            if (mass[6] == vrah) { c06++; c68++; } else if (mass[6] != 3) { c06mi++; c68mi++; }
-            if (mass[7] == vrah) { c68++; } else if (mass[7] != 3) { c68mi++; }
-            if (mass[8] == vrah) { c68++; c28++; } else if (mass[8] != 3) { c68mi++; c28mi++; }
-            if (c02 == 2 && c02mi == 0) //проверка критичных ситуаций
+            //0 1 2
+            //3 4 5
+            //6 7 8
+            if (mass[4] == 3)
+                return 4;
+            if (mass[0] == 3)
+                return 0;
+            if (mass[2] == 3)
+                return 2;
+            if (mass[6] == 3)
+                return 6;
+            if (mass[8] == 3)
+                return 8;
+            Random rand;
+            try { int chisel = (DateTime.Now - new DateTime(2016, 7, 22)).Seconds; rand = new Random(chisel); }
+            catch (Exception) { rand = new Random(DateTime.Now.Millisecond); }
+            DateTime start = DateTime.Now;
+            while(true)
             {
-                if (mass[1] == 3) return 1; //немедленно ходим туда
-                if (mass[0] == 3) return 0;
-                if (mass[2] == 3) return 2;
+                int i = rand.Next(0, 9);
+                if (mass[i] == 3)
+                    return i;
+                if ((DateTime.Now - start).Seconds >= 60)
+                    break;
             }
-            if (c68 == 2 && c68mi == 0)
+            for (int i=0;i<9;i++)
             {
-                if (mass[6] == 3) return 6;
-                if (mass[7] == 3) return 7;
-                if (mass[8] == 3) return 8;
+                if (mass[i] == 3)
+                    return i;
             }
-            if (c06 == 2 && c06mi == 0)
-            {
-                if (mass[0] == 3) return 0;
-                if (mass[3] == 3) return 3;
-                if (mass[6] == 3) return 6;
-            }
-            if (c28 == 2 && c28mi == 0)
-            {
-                if (mass[2] == 3) return 2;
-                if (mass[5] == 3) return 5;
-                if (mass[8] == 3) return 8;
-            }
-
-            for (int i = 0; i < 9; i++)
-                if (mass[i] == 3) return i;
-
             return -1;
         }
-        private int partical_hod(int[] mass, int vrah)
-        {
-            int mi;
-            if (vrah == 1) mi = 0; else mi = 1;
 
+        /// <summary>
+        /// Проверка на победу по линиям
+        /// </summary>
+        /// <param name="pole">Игровое поле</param>
+        /// <param name="me">Я</param>
+        /// <param name="vrah">Соперник</param>
+        /// <returns></returns>
+        private int provPobedaCub(int[][] pole, int me, int vrah)
+        {
+            bool start = true;
+            start1:
+            if (me == 1)
+            {
+                for (int i = 0; i < 3; i++)
+                {
+                    int kol = 0;
+                    for (int j = 0; j < 3; j++)
+                    {
+                        switch (pole[i][j])
+                        {
+                            case 0:
+                                goto ret1;
+                            case 1:
+                                kol++;
+                                break;
+                            case 3:
+                                break;
+                            default:
+                                return ((i * 3 + j) * (-1));
+                        }
+                    }
+                    if (kol == 2)
+                    {
+                        for (int j = 0; j < 3; j++)
+                           if (pole[i][j] == 3)
+                                return i * 3 + j;
+                    }
+                    ret1:;
+                }
+            }
+            else
+            {
+                for (int i = 0; i < 3; i++)
+                {
+                    int kol = 0;
+                    for (int j = 0; j < 3; j++)
+                    {
+                        switch (pole[i][j])
+                        {
+                            case 1:
+                                goto ret1;
+                            case 0:
+                                kol++;
+                                break;
+                            case 3:
+                                break;
+                            default:
+                                return ((i * 3 + j) * (-1));
+                        }
+                    }
+                    if (kol == 2)
+                    {
+                        for (int j = 0; j < 3; j++)
+                            if (pole[i][j] == 3)
+                                return i * 3 + j;
+                    }
+                    ret1:;
+                }
+            }
+            if (start == false)
+                return -1;
+            start = false;
+            pole = matrixRight(pole);
+            goto start1;
+        }
+
+        /// <summary>
+        /// Проверка на проигрыш
+        /// </summary>
+        /// <param name="pole">Игровое поле</param>
+        /// <param name="me">Я</param>
+        /// <param name="vrah">Враг</param>
+        /// <returns></returns>
+        private int provVrag(int[][] pole, int me, int vrah)
+        {
+            int res = provVragCub((int[][])pole.Clone(), me, vrah);
+            return (res != -1) ? res : provVragDiagol((int[][])pole.Clone(), me, vrah); 
+        }
+
+        private int provVragCub(int[][] pole, int me, int vrah)
+        {
+            for (int i=0;i<3;i++)
+            {
+                int kol = 0;
+            }
+        }
+
+        private int provVragDiagol(int[][] pole, int me, int vrah)
+        {
+            int res = 0;
+
+            for (int i = 0; i < 3; i++)
+                if (pole[i][i] == vrah)
+                    res += 1;
+                else goto ret1;
+
+            if (res == 2)
+                for (int i=0;i<3;i++) if (pole[i][i] == 3) return (i * 3 + i);
+
+            ret1:
+
+            for (int i = 0; i < 3; i++)
+                if (pole[i][2-i] == vrah)
+                    res += 1;
+                else return -1;
+
+            if (res == 2)
+                for (int i = 0; i < 3; i++) if (pole[i][2-i] == 3) return (i * 3 + (2-i));
+            System.Windows.Forms.MessageBox.Show("Test");
             return -1;
+        }
+
+        /// <summary>
+        /// Повернутая направо матрица
+        /// </summary>
+        /// <param name="original">Исходная матрица</param>
+        /// <returns></returns>
+        private int[][] matrixRight(int[][] original)
+        {
+            int[][] res = new int[3][] { new int[3], new int[3], new int[3] };
+            Parallel.Invoke(() =>
+            {
+                res[0][0] = original[2][0];
+                res[0][1] = original[1][0];
+                res[0][2] = original[0][0];
+            }, () =>
+            {
+                res[1][0] = original[2][1];
+                res[1][1] = original[1][1];
+                res[1][2] = original[0][1];
+            }, () =>
+            {
+                res[2][0] = original[2][2];
+                res[2][1] = original[1][2];
+                res[2][2] = original[0][2];
+            });
+            return res;
+        }
+        /*0 1 2
+         * 3 4 5
+         * 6 7 8
+         * 
+         * 6 3 0
+         * 7 4 1
+         * 8 5 2
+         */
+
+        /// <summary>
+        /// Получить матрицу 3х3 из массива х9
+        /// </summary>
+        /// <param name="original">Массив</param>
+        /// <returns></returns>
+        private int[][] getMatrix(int[] original)
+        {
+            int[][] res = new int[3][] { new int[3], new int[3], new int[3] };
+            Parallel.For(0, 3, (i, state) =>
+            {
+                for (int j = 0; j < 3; j++)
+                    res[i][j] = original[i * 3 + j];
+            });
+            return res;
         }
     }
 }
